@@ -15,6 +15,7 @@ import { ConfigService } from "@nestjs/config";
 import { Request, Response } from "express";
 import { ProviderService } from "@/auth/provider/provider.service";
 import { PrismaService } from "@/prisma/prisma.service";
+import { EmailConfirmationService } from "@/auth/email-confirmation/email-confirmation.service";
 
 @Injectable()
 export class AuthService {
@@ -22,6 +23,7 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly configService: ConfigService,
     private readonly providerService: ProviderService,
+    private readonly emailConfirmationService: EmailConfirmationService,
     private readonly prismaService: PrismaService,
   ) {}
 
@@ -38,7 +40,11 @@ export class AuthService {
       AuthMethod.CREDENTIALS,
       false,
     );
-    return this.saveSession(req, newUser);
+    await this.emailConfirmationService.sendVerificationToken(newUser);
+
+    return {
+      message: "You successfully registered. Please confirm you email. Message was sent to your email address"
+    }
   }
 
   public async login(req: Request, dto: LoginDto) {
@@ -49,6 +55,10 @@ export class AuthService {
     const isValidPassword = await verify(user.password, dto.password);
     if (!isValidPassword) {
       throw new UnauthorizedException('Incorrect password');
+    }
+    if (!user.isVerified) {
+      await this.emailConfirmationService.sendVerificationToken(user);
+      throw new UnauthorizedException('Your email is not confirmed. Please, check your email and confirm your email');
     }
     return this.saveSession(req, user);
   }
@@ -101,7 +111,7 @@ export class AuthService {
     })
   }
 
-  private async saveSession(req: Request, user: User) {
+  public async saveSession(req: Request, user: User) {
     return new Promise((resolve, reject) => {
       req.session.userId = user.id;
       req.session.save(err => {
