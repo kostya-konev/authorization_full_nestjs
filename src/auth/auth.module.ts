@@ -8,6 +8,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { ProviderModule } from "@/auth/provider/provider.module";
 import { getProviderConfig } from "@/config/providers.config";
 import { EmailConfirmationModule } from "@/auth/email-confirmation/email-confirmation.module";
+import { TwoFactorAuthService } from "@/auth/two-factor-auth/two-factor-auth.service";
 
 @Module({
   imports: [
@@ -24,7 +25,7 @@ import { EmailConfirmationModule } from "@/auth/email-confirmation/email-confirm
     forwardRef(() => EmailConfirmationModule),
   ],
   controllers: [AuthController],
-  providers: [AuthService, UserService],
+  providers: [AuthService, UserService, TwoFactorAuthService],
   exports: [AuthService],
 })
 export class AuthModule {}

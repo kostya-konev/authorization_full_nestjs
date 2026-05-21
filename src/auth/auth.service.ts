@@ -16,6 +16,7 @@ import { Request, Response } from "express";
 import { ProviderService } from "@/auth/provider/provider.service";
 import { PrismaService } from "@/prisma/prisma.service";
 import { EmailConfirmationService } from "@/auth/email-confirmation/email-confirmation.service";
+import { TwoFactorAuthService } from "@/auth/two-factor-auth/two-factor-auth.service";
 
 @Injectable()
 export class AuthService {
@@ -25,6 +26,7 @@ export class AuthService {
     private readonly providerService: ProviderService,
     private readonly emailConfirmationService: EmailConfirmationService,
     private readonly prismaService: PrismaService,
+    private readonly twoFactorAuthService: TwoFactorAuthService,
   ) {}
 
   public async register(req: Request, dto: RegisterDto) {
@@ -60,6 +62,17 @@ export class AuthService {
       await this.emailConfirmationService.sendVerificationToken(user);
       throw new UnauthorizedException('Your email is not confirmed. Please, check your email and confirm your email');
     }
+
+    if (user.isTwoFactorEnabled) {
+      if (!dto.code) {
+        await this.twoFactorAuthService.sendTwoFactorToken(user.email);
+        return {
+          message: "Check your email. 2FA code is required"
+        }
+      }
+      await this.twoFactorAuthService.validateTwoFactorToken(user.email, dto.code);
+    }
+
     return this.saveSession(req, user);
   }
 
