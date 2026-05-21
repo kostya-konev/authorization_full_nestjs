@@ -9,6 +9,7 @@ import { ProviderModule } from "@/auth/provider/provider.module";
 import { getProviderConfig } from "@/config/providers.config";
 import { EmailConfirmationModule } from "@/auth/email-confirmation/email-confirmation.module";
 import { TwoFactorAuthService } from "@/auth/two-factor-auth/two-factor-auth.service";
+import { MailModule } from "@/libs/mail/mail.module";
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { TwoFactorAuthService } from "@/auth/two-factor-auth/two-factor-auth.ser
       inject: [ConfigService],
     }),
     forwardRef(() => EmailConfirmationModule),
+    MailModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, UserService, TwoFactorAuthService],
